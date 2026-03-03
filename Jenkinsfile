@@ -19,6 +19,7 @@ pipeline {
     environment {
         // ──────────────────────────────────────────────────────────
         // [تعديل] إعدادات الصورة والمستودعات
+        // Image & Repository Settings
         // ──────────────────────────────────────────────────────────
         DOCKER_IMAGE    = 'your-dockerhub-username/your-app-name'
         GIT_REPO        = 'https://github.com/your-username/your-repo.git'
@@ -26,19 +27,22 @@ pipeline {
 
         // ──────────────────────────────────────────────────────────
         // [تعديل] معرّفات بيانات الاعتماد المحفوظة في Jenkins
+        // Jenkins Credentials IDs
         // ──────────────────────────────────────────────────────────
         DOCKER_CREDS    = 'docker-hub-creds'
         SERVER_CREDS    = 'server-ssh-key'
 
         // ──────────────────────────────────────────────────────────
         // [تعديل] بيانات الاتصال بالسيرفر المضيف (Host)
+        // Docker Host Connection Details
         // ──────────────────────────────────────────────────────────
         SERVER_USER     = 'your_server_user'
-        SERVER_IP       = '100.x.x.x' // Tailscale IP or Public IP
-        SSH_PORT        = '22'        // Your SSH port
+        SERVER_IP       = 'your_server_ip'       // Tailscale IP or Public IP
+        SSH_PORT        = '22'                    // Your SSH port
 
         // ──────────────────────────────────────────────────────────
         // [تعديل] مسارات المجلدات على السيرفر
+        // Server Directory Paths
         // ──────────────────────────────────────────────────────────
         BUILD_DIR       = '/home/your_server_user/jenkins_build_workspace'
         LIVE_DIR        = '/home/your_server_user/your-app-stack'
@@ -46,6 +50,7 @@ pipeline {
 
         // ──────────────────────────────────────────────────────────
         // [تعديل] Health Check (فحص صحة التطبيق بعد النشر)
+        // Post-Deploy Health Check Settings
         // ──────────────────────────────────────────────────────────
         HEALTH_URL      = 'https://your-domain.com'
         HEALTH_RETRIES  = '6'
@@ -53,6 +58,7 @@ pipeline {
 
         // ──────────────────────────────────────────────────────────
         // [تعديل] إشعارات التلجرام
+        // Telegram Notifications
         // ──────────────────────────────────────────────────────────
         TELEGRAM_TOKEN  = credentials('telegram-bot-token') // Store token as Secret Text in Jenkins
         TELEGRAM_CHAT   = 'YOUR_TELEGRAM_CHAT_ID'
@@ -64,7 +70,6 @@ pipeline {
         // ║  Stage 1 — التحقق المبدئي (Pre-flight Checks)              ║
         // ╚════════════════════════════════════════════════════════════╝
         stage('Pre-flight Checks') {
-            when { branch "${GIT_BRANCH}" }
             steps {
                 script {
                     env.DEPLOY_START = sh(script: 'date +%s', returnStdout: true).trim()
@@ -117,38 +122,46 @@ PREFLIGHT
         // ║  Stage 2 — تحضير الكود المصدري على السيرفر                 ║
         // ╚════════════════════════════════════════════════════════════╝
         stage('Prepare Source Code') {
-            when { branch "${GIT_BRANCH}" }
             steps {
-                sshagent([SERVER_CREDS]) {
-                    sh """
-                        set -e
-                        ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'PREPARE'
-                        set -e
-                        echo "══════════════════════════════════════════"
-                        echo "📂 Preparing Source Code..."
-                        echo "══════════════════════════════════════════"
+                withCredentials([usernamePassword(
+                    credentialsId: 'github-auth',
+                    usernameVariable: 'GIT_USER',
+                    passwordVariable: 'GIT_TOKEN'
+                )]) {
+                    sshagent([SERVER_CREDS]) {
+                        sh """
+                            set -e
+                            ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'PREPARE'
+                            set -e
+                            echo "══════════════════════════════════════════"
+                            echo "📂 Preparing Source Code..."
+                            echo "══════════════════════════════════════════"
 
-                        mkdir -p ${BUILD_DIR}
-                        cd ${BUILD_DIR}
+                            mkdir -p ${BUILD_DIR}
+                            cd ${BUILD_DIR}
 
-                        if [ -d .git ]; then
-                            echo "🔄 Repository exists — pulling latest changes..."
-                            git fetch --all --prune
-                            git reset --hard origin/${GIT_BRANCH}
-                            git clean -fd
-                        else
-                            echo "⬇️  Cloning repository..."
-                            git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} .
-                        fi
+                            AUTH_REPO="https://${GIT_USER}:${GIT_TOKEN}@github.com/your-username/your-repo.git"
 
-                        COMMIT_SHA=\$(git rev-parse --short HEAD)
-                        COMMIT_MSG=\$(git log -1 --pretty=%s)
-                        echo "══════════════════════════════════════════"
-                        echo "✅ Source ready | Commit: \${COMMIT_SHA}"
-                        echo "📝 Message: \${COMMIT_MSG}"
-                        echo "══════════════════════════════════════════"
+                            if [ -d .git ]; then
+                                echo "🔄 Repository exists — pulling latest changes..."
+                                git remote set-url origin "\$AUTH_REPO"
+                                git fetch --all --prune
+                                git reset --hard origin/${GIT_BRANCH}
+                                git clean -fd
+                            else
+                                echo "⬇️  Cloning repository..."
+                                git clone --branch ${GIT_BRANCH} --single-branch "\$AUTH_REPO" .
+                            fi
+
+                            COMMIT_SHA=\$(git rev-parse --short HEAD)
+                            COMMIT_MSG=\$(git log -1 --pretty=%s)
+                            echo "══════════════════════════════════════════"
+                            echo "✅ Source ready | Commit: \${COMMIT_SHA}"
+                            echo "📝 Message: \${COMMIT_MSG}"
+                            echo "══════════════════════════════════════════"
 PREPARE
-                    """
+                        """
+                    }
                 }
             }
         }
@@ -157,7 +170,6 @@ PREPARE
         // ║  Stage 3 — بناء ورفع صورة Docker                           ║
         // ╚════════════════════════════════════════════════════════════╝
         stage('Build & Push Docker Image') {
-            when { branch "${GIT_BRANCH}" }
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: DOCKER_CREDS,
@@ -212,7 +224,6 @@ BUILDPUSH
         // ║  Stage 4 — النشر المباشر عبر Docker Compose                ║
         // ╚════════════════════════════════════════════════════════════╝
         stage('Deploy to Production') {
-            when { branch "${GIT_BRANCH}" }
             steps {
                 sshagent([SERVER_CREDS]) {
                     sh """
@@ -257,10 +268,9 @@ DEPLOY
         }
 
         // ╔════════════════════════════════════════════════════════════╗
-        // ║  Stage 5 — فحص صحة التطبيق (Health Check)                ║
+        // ║  Stage 5 — فحص صحة التطبيق (Health Check)                  ║
         // ╚════════════════════════════════════════════════════════════╝
         stage('Health Check') {
-            when { branch "${GIT_BRANCH}" }
             steps {
                 sshagent([SERVER_CREDS]) {
                     sh """
@@ -274,22 +284,26 @@ DEPLOY
                         RETRIES=${HEALTH_RETRIES}
                         INTERVAL=${HEALTH_INTERVAL}
                         URL="${HEALTH_URL}"
+                        SUCCESS=0
 
                         for i in \$(seq 1 \$RETRIES); do
                             HTTP_CODE=\$(curl -s -o /dev/null -w "%{http_code}" "\$URL" 2>/dev/null || echo "000")
                             if [ "\$HTTP_CODE" -ge 200 ] && [ "\$HTTP_CODE" -lt 400 ]; then
                                 echo "✅ Health check passed! (HTTP \$HTTP_CODE) — Attempt \$i/\$RETRIES"
-                                exit 0
+                                SUCCESS=1
+                                break
                             fi
                             echo "⏳ Attempt \$i/\$RETRIES — HTTP \$HTTP_CODE — retrying in \${INTERVAL}s..."
                             sleep \$INTERVAL
                         done
 
-                        echo "❌ Health check failed after \$RETRIES attempts!"
-                        echo "📋 Container logs:"
-                        cd ${LIVE_DIR}
-                        docker compose logs --tail=50 ${APP_SERVICE}
-                        exit 1
+                        if [ "\$SUCCESS" -eq 0 ]; then
+                            echo "❌ Health check failed after \$RETRIES attempts!"
+                            echo "📋 Container logs:"
+                            cd ${LIVE_DIR}
+                            docker compose logs --tail=50 ${APP_SERVICE}
+                            exit 1
+                        fi
 HEALTH
                     """
                 }
@@ -300,7 +314,6 @@ HEALTH
         // ║  Stage 6 — تنظيف الموارد (Cleanup)                       ║
         // ╚════════════════════════════════════════════════════════════╝
         stage('Cleanup') {
-            when { branch "${GIT_BRANCH}" }
             steps {
                 sshagent([SERVER_CREDS]) {
                     sh """
