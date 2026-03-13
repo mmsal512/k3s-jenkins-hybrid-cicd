@@ -1,0 +1,326 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║              🛡️ Universal .gitignore                       ║
+# ║     Covers: Security, DevOps, Web, Mobile & More           ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# ============================================================
+# 🔐 SECURITY — Secrets, Keys, Credentials (CRITICAL)
+# ============================================================
+
+# SSH & GPG Keys
+*.pem
+*.key
+*.pub
+*.ppk
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa
+id_ed25519
+id_ecdsa
+*.gpg
+*.asc
+
+# Certificates & SSL
+*.crt
+*.csr
+*.cer
+*.der
+
+# Passwords & Secrets
+*.secret
+*.secrets
+*.password
+*.passwords
+consul-key.txt
+vault-token.txt
+*-token.txt
+*-key.txt
+
+# Environment Files
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Ansible Vault
+*.vault
+*vault*.yml
+!*vault*.yml.example
+ansible-vault-password
+vault-password.txt
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+crash.log
+
+# Docker secrets
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+!docker-compose.example.yml
+
+# Cloud Provider Credentials
+.aws/
+.azure/
+.gcp/
+credentials
+credentials.json
+service-account*.json
+gcloud-key*.json
+
+# API Keys & Tokens
+*_token
+*_apikey
+*.token
+api_key*
+apikey*
+
+# ============================================================
+# 🐳 DOCKER & CONTAINERS
+# ============================================================
+.docker/
+docker-compose.override.yml
+
+# ============================================================
+# 📦 NODE.JS / JAVASCRIPT / TYPESCRIPT
+# ============================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.npm/
+.yarn/
+dist/
+build/
+.next/
+.nuxt/
+.output/
+.cache/
+.parcel-cache/
+.vite/
+
+# ============================================================
+# 🐘 PHP / LARAVEL
+# ============================================================
+vendor/
+composer.lock
+storage/*.key
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+bootstrap/cache/
+
+# ============================================================
+# 🐍 PYTHON
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+*.whl
+pip-log.txt
+pip-delete-this-directory.txt
+.venv/
+venv/
+env/
+.python-version
+*.ipynb_checkpoints/
+.mypy_cache/
+.pytest_cache/
+
+# ============================================================
+# 🎯 FLUTTER / DART
+# ============================================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+build/
+*.iml
+*.lock
+!pubspec.lock
+
+# ============================================================
+# 📱 ANDROID
+# ============================================================
+*.apk
+*.aab
+*.dex
+*.class
+local.properties
+.gradle/
+gradle-wrapper.jar
+
+# ============================================================
+# 🍎 iOS / macOS
+# ============================================================
+*.ipa
+*.dSYM.zip
+*.dSYM
+Pods/
+Podfile.lock
+.symlinks/
+*.xcworkspace
+!default.xcworkspace
+
+# ============================================================
+# 🗄️ DATABASES
+# ============================================================
+*.sql
+!schema.sql
+!migrations/*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.mdb
+dump.rdb
+
+# ============================================================
+# 📝 LOGS
+# ============================================================
+*.log
+logs/
+*.log.*
+npm-debug.log
+yarn-debug.log
+pip-log.txt
+
+# ============================================================
+# ⚙️ DEVOPS & INFRASTRUCTURE
+# ============================================================
+
+# Ansible
+*.retry
+
+# Nomad / Consul / Vault
+/opt/nomad/
+/opt/consul/
+/opt/vault/
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# ============================================================
+# 💻 IDE & EDITORS
+# ============================================================
+
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains (IntelliJ, WebStorm, Android Studio)
+.idea/
+*.iws
+
+# Vim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Gemini / AI Agents
+.gemini/
+.agent/
+.agents/
+
+# ============================================================
+# 🖥️ OPERATING SYSTEM
+# ============================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================================
+# 📦 ARCHIVES & BINARIES
+# ============================================================
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+*.iso
+*.dmg
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+*.o
+*.a
+*.out
+
+# ============================================================
+# 🖼️ LARGE MEDIA (Optional — uncomment if needed)
+# ============================================================
+# *.mp4
+# *.mov
+# *.avi
+# *.mkv
+# *.mp3
+# *.wav
+# *.psd
+# *.ai
+
+# ============================================================
+# 📊 MISCELLANEOUS
+# ============================================================
+*.bak
+*.tmp
+*.temp
+*.orig
+*.rej
+*.patch
+*.diff
+*.pid
+*.seed
+*.pid.lock
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+coverage/
+.nyc_output/

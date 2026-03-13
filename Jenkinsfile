@@ -41,6 +41,12 @@ pipeline {
         SSH_PORT        = '22'                    // Your SSH port
 
         // ──────────────────────────────────────────────────────────
+        // SSH Security Options
+        // accept-new: يقبل المفتاح في أول اتصال، ويرفض أي تغيير لاحق (حماية MITM)
+        // ──────────────────────────────────────────────────────────
+        SSH_OPTS        = '-o StrictHostKeyChecking=accept-new'
+
+        // ──────────────────────────────────────────────────────────
         // [تعديل] مسارات المجلدات على السيرفر
         // Server Directory Paths
         // ──────────────────────────────────────────────────────────
@@ -78,7 +84,7 @@ pipeline {
                 sshagent([SERVER_CREDS]) {
                     sh """
                         set -e
-                        ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'PREFLIGHT'
+                        ssh ${SSH_OPTS} -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'PREFLIGHT'
                         set -e
                         echo "══════════════════════════════════════════"
                         echo "🔍 Pre-flight Checks"
@@ -131,7 +137,7 @@ PREFLIGHT
                     sshagent([SERVER_CREDS]) {
                         sh """
                             set -e
-                            ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'PREPARE'
+                            ssh ${SSH_OPTS} -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'PREPARE'
                             set -e
                             echo "══════════════════════════════════════════"
                             echo "📂 Preparing Source Code..."
@@ -179,7 +185,7 @@ PREPARE
                     sshagent([SERVER_CREDS]) {
                         sh """
                             set -e
-                            ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'BUILDPUSH'
+                            ssh ${SSH_OPTS} -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'BUILDPUSH'
                             set -e
                             cd ${BUILD_DIR}
 
@@ -224,11 +230,12 @@ BUILDPUSH
         // ║  Stage 4 — النشر المباشر عبر Docker Compose                ║
         // ╚════════════════════════════════════════════════════════════╝
         stage('Deploy to Production') {
+            when { branch 'main' }
             steps {
                 sshagent([SERVER_CREDS]) {
                     sh """
                         set -e
-                        ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'DEPLOY'
+                        ssh ${SSH_OPTS} -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'DEPLOY'
                         set -e
                         echo "══════════════════════════════════════════"
                         echo "🚀 Deploying to Production..."
@@ -271,11 +278,12 @@ DEPLOY
         // ║  Stage 5 — فحص صحة التطبيق (Health Check)                  ║
         // ╚════════════════════════════════════════════════════════════╝
         stage('Health Check') {
+            when { branch 'main' }
             steps {
                 sshagent([SERVER_CREDS]) {
                     sh """
                         set -e
-                        ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'HEALTH'
+                        ssh ${SSH_OPTS} -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'HEALTH'
                         set -e
                         echo "══════════════════════════════════════════"
                         echo "🏥 Running Health Check..."
@@ -314,11 +322,12 @@ HEALTH
         // ║  Stage 6 — تنظيف الموارد (Cleanup)                       ║
         // ╚════════════════════════════════════════════════════════════╝
         stage('Cleanup') {
+            when { branch 'main' }
             steps {
                 sshagent([SERVER_CREDS]) {
                     sh """
                         set -e
-                        ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'CLEANUP'
+                        ssh ${SSH_OPTS} -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'CLEANUP'
                         set -e
                         echo "══════════════════════════════════════════"
                         echo "🧹 Cleaning up resources..."
